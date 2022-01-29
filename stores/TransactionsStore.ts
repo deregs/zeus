@@ -10,6 +10,7 @@ import Base64Utils from './../utils/Base64Utils';
 
 const keySendPreimageType = '5482373484';
 const preimageByteLength = 32;
+const keySendMessageType = '34349334';
 
 interface SendPaymentReq {
     payment_request?: string;
@@ -21,6 +22,7 @@ interface SendPaymentReq {
     fee_limit_sat?: string | null;
     outgoing_chan_id?: string | null;
     last_hop_pubkey?: string | null;
+    message?: string | null;
     amp?: boolean;
 }
 
@@ -191,6 +193,7 @@ export default class TransactionsStore {
         fee_limit_sat,
         outgoing_chan_id,
         last_hop_pubkey,
+        message,
         amp
     }: SendPaymentReq) => {
         this.loading = true;
@@ -219,10 +222,34 @@ export default class TransactionsStore {
                 ).toString('base64');
 
                 data.dest_string = pubkey;
-                data.dest_custom_records = { [keySendPreimageType]: secret };
+                if (message) {
+                    const hex_message = Buffer.from(
+                        message,
+                        'utf8'
+                    ).toString('hex');
+                    data.dest_custom_records = { [keySendPreimageType]: secret, [keySendMessageType]: hex_message };
+                    console.log("IF");
+                } else {
+                    data.dest_custom_records = { [keySendPreimageType]: secret };
+                    console.log("ELSE");
+                }
+                
                 data.payment_hash = payment_hash;
             } else {
+                console.log("AMP");
                 data.dest = Base64Utils.hexToBase64(pubkey);
+            }
+        }
+        if (message) {
+            //const hex_message = new Buffer(myString).toString('hex');
+            const hex_message = Buffer.from(
+                message,
+                'utf8'
+            ).toString('hex');
+            if (!amp) {
+                //data.dest_custom_records = Object.assign(data.dest_custom_records, { [keySendMessageType]: hex_message});
+            } else {
+                //data.dest_custom_records = { [keySendMessageType]: hex_message};
             }
         }
 
